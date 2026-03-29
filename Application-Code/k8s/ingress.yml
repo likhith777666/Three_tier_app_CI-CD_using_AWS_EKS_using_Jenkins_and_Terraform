@@ -16,28 +16,28 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: backend
+                name: backend-deployment
                 port:
                   number: 3500
           - path: /healthz
             pathType: Exact
             backend:
               service:
-                name: backend
+                name: backend-deployment
                 port:
                   number: 3500
           - path: /ready
             pathType: Exact
             backend: 
               service:
-                name: backend
+                name: backend-deployment
                 port: 
                   number: 3500
           - path: /started
             pathType: Exact
             backend:
               service:
-                name: backend
+                name: backend-deployment
                 port:
                   number: 3500
           - path: /
