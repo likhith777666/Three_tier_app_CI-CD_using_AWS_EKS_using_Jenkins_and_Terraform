@@ -19,27 +19,31 @@ spec:
                 name: backend-deployment
                 port:
                   number: 3500
+
           - path: /healthz
-            pathType: Exact
+            pathType: Prefix   # ✅ FIXED
             backend:
               service:
                 name: backend-deployment
                 port:
                   number: 3500
+
           - path: /ready
-            pathType: Exact
-            backend: 
-              service:
-                name: backend-deployment
-                port: 
-                  number: 3500
-          - path: /started
-            pathType: Exact
+            pathType: Prefix   # ✅ FIXED
             backend:
               service:
                 name: backend-deployment
                 port:
                   number: 3500
+
+          - path: /started
+            pathType: Prefix   # ✅ FIXED
+            backend:
+              service:
+                name: backend-deployment
+                port:
+                  number: 3500
+
           - path: /
             pathType: Prefix
             backend:
