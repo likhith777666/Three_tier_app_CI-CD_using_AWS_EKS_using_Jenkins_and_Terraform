@@ -1,0 +1,134 @@
+pipeline {
+    agent any 
+    tools {
+        nodejs 'nodejs'
+    }
+    environment  {
+        SCANNER_HOME=tool 'sonar-scanner'
+        AWS_ACCOUNT_ID = credentials('ACCOUNT_ID')
+        DOCKER_CREDS = credentials('docker-creds')   // Jenkins creds
+        DOCKERHUB_USERNAME = "likhith045" 
+        AWS_DEFAULT_REGION = 'us-east-1'
+        IMAGE_NAME = "backend"
+    }
+    stages {
+        stage('Cleaning Workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+        stage('Checkout from Git') {
+            steps {
+                git branch: 'main', credentialsId: 'GITHUB_APP', url: 'https://github.com/likhith777666/Three_tier_app_CI-CD_using_AWS_EKS_using_Jenkins_and_Terraform.git'
+            }
+        }
+        stage('Sonarqube Analysis') {
+            steps {
+                dir('Application-Code/backend') {
+    withSonarQubeEnv('sonar-server') {
+        sh '''
+        $SCANNER_HOME/bin/sonar-scanner \
+        -Dsonar.projectName=backend \
+        -Dsonar.projectKey=backend \
+        -Dsonar.sources=.
+        '''
+    }
+}
+            }
+        }
+        stage('Quality Check') {
+            steps {
+                script {
+                    waitForQualityGate abortPipeline: false, credentialsId: 'sonar-token' 
+                }
+            }
+        }
+        // stage('OWASP Dependency-Check Scan') {
+        //     steps {
+        //         dir('Application-Code/frontend') {
+        //             dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'dp-check'
+        //             dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+        //         }
+        //     }
+        // }
+        stage('Trivy File Scan') {
+            steps {
+                dir('Application-Code/backend') {
+                    sh 'trivy fs . > trivyfs.txt'
+                }
+            }
+        }
+        stage("Docker Image Build") {
+            steps {
+                script {
+                    dir('Application-Code/backend') {
+                        sh 'docker system prune -f'
+                        sh 'docker container prune -f'
+                        sh 'docker build -t ${DOCKERHUB_USERNAME}/${IMAGE_NAME}:${BUILD_NUMBER} .'
+                    }
+                    }
+                }
+            }
+         stage("Docker Login") {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                    sh 'echo $PASS | docker login -u $USER --password-stdin'
+                }
+            }
+        }
+
+        stage("Docker Push") {
+            steps {
+                sh 'docker push ${DOCKERHUB_USERNAME}/${IMAGE_NAME}:${BUILD_NUMBER}'
+            }
+        }
+        stage("TRIVY Image Scan") {
+            steps {
+                sh 'trivy image ${DOCKERHUB_USERNAME}/${IMAGE_NAME}:${BUILD_NUMBER} > trivyimage.txt'
+            }
+        }
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main', credentialsId: 'GITHUB_APP', url: 'https://github.com/likhith777666/Three_tier_app_CI-CD_using_AWS_EKS_using_Jenkins_and_Terraform.git'
+            }
+        }
+        stage('Update Deployment file') {
+            environment {
+                GIT_REPO_NAME = "Three_tier_app_CI-CD_using_AWS_EKS_using_Jenkins_and_Terraform"
+                GIT_USER_NAME = "likhith777666"
+            }
+            steps {
+    dir('Application-Code/k8s') {
+        withCredentials([usernamePassword(
+            credentialsId: 'GITHUB_APP',
+            usernameVariable: 'GIT_USER',
+            passwordVariable: 'GITHUB_TOKEN'
+        )]) {
+            sh '''
+                pwd
+                ls -l
+
+                git config user.email "likhithbobby000@gmail.com"
+                git config user.name "likhith777666"
+
+                echo "Build Number: $BUILD_NUMBER"
+
+                # Extract current image tag
+                imageTag=$(grep -oP '(?<=backend:)[^ ]+' backend-deployment.yml || true)
+                echo "Old tag: $imageTag"
+
+                # Replace with new tag
+                sed -i "s|${DOCKERHUB_USERNAME}/${IMAGE_NAME}:$imageTag|${DOCKERHUB_USERNAME}/${IMAGE_NAME}:${BUILD_NUMBER}|g" backend-deployment.yml
+
+                # Commit and push
+                git add backend-deployment.yml
+                git commit -m "Update backend image to version ${BUILD_NUMBER}" || echo "No changes"
+
+                git push https://${GIT_USER}:${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
+            '''
+        }
+    }
+}
+        }
+   }
+}
