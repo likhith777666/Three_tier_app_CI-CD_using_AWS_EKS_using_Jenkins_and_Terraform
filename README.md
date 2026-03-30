@@ -4,54 +4,8 @@ This project demonstrates a complete production-style DevOps workflow where a th
 
 The entire system is designed to reflect real-world cloud architecture, combining Infrastructure as Code, CI/CD automation, and Kubernetes-based deployment on AWS.
 
-    ┌──────────────┐
-    │  Developer   │
-    └──────┬───────┘
-           │  Push Code
-           ▼
-    ┌──────────────┐
-    │    GitHub    │
-    └──────┬───────┘
-           │  Webhook Trigger
-           ▼
-    ┌──────────────┐
-    │   Jenkins    │
-    │  (CI/CD)     │
-    └──────┬───────┘
-           │
- ┌─────────┼─────────┐
- │                   │
- ▼                   ▼
-
-┌──────────────┐ ┌──────────────┐
-│ SonarQube │    │  Docker     │
-│ Code Analysis│ │ Build Image │
-└──────────────┘ └──────┬───────┘
-│ Push Image
-▼
-┌──────────────┐
-│ docker       │
-│ (Registry)   │
-└──────┬───────┘
-│
-▼
-┌──────────────┐
-│ ArgoCD │
-│ (GitOps CD) │
-└──────┬───────┘
-│ Sync Manifests
-▼
-┌──────────────┐
-│ AWS EKS │
-│ Kubernetes │
-└──────┬───────┘
-│
-▼
-┌──────────────────────┐
-│ AWS ALB (Ingress) │
-└─────────┬────────────┘
-▼
-Users 🌍
+  
+<img width="1408" height="768" alt="Gemini_Generated_Image_d9rb2ld9rb2ld9rb" src="https://github.com/user-attachments/assets/aa601da5-8331-47b1-8790-567ba0d82f8d" />
 
 # Infrastructure (Terraform)
 
