@@ -1,6 +1,6 @@
 # Project: End-to-End DevOps CI/CD Pipeline with AWS EKS, Jenkins & ArgoCD
 
-This project demonstrates a complete production-style DevOps workflow where a three-tier application (Frontend, Backend, Database) is automatically built, analyzed, containerized, and deployed into Kubernetes using GitOps principles.
+This project demonstrates a complete production-style DevOps workflow where a  application  is automatically built, analyzed, containerized, and deployed into Kubernetes using GitOps principles.
 
 The entire system is designed to reflect real-world cloud architecture, combining Infrastructure as Code, CI/CD automation, and Kubernetes-based deployment on AWS.
 
